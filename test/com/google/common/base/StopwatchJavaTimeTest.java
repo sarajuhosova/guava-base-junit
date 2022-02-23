@@ -18,20 +18,23 @@ package com.google.common.base;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.testing.FakeTicker;
-import java.time.Duration;
 import junit.framework.TestCase;
 
-/** Unit test for the {@code java.time} support in {@link Stopwatch}. */
+import java.time.Duration;
+
+/**
+ * Unit test for the {@code java.time} support in {@link Stopwatch}.
+ */
 @GwtIncompatible
 public class StopwatchJavaTimeTest extends TestCase {
-  private final FakeTicker ticker = new FakeTicker();
-  private final Stopwatch stopwatch = new Stopwatch(ticker);
+    private final FakeTicker ticker = new FakeTicker();
+    private final Stopwatch stopwatch = new Stopwatch(ticker);
 
-  public void testElapsed_duration() {
-    stopwatch.start();
-    ticker.advance(999999);
-    assertEquals(Duration.ofNanos(999999), stopwatch.elapsed());
-    ticker.advance(1);
-    assertEquals(Duration.ofMillis(1), stopwatch.elapsed());
-  }
+    public void testElapsed_duration() {
+        stopwatch.start();
+        ticker.advance(999999);
+        assertEquals(Duration.ofNanos(999999), stopwatch.elapsed());
+        ticker.advance(1);
+        assertEquals(Duration.ofMillis(1), stopwatch.elapsed());
+    }
 }
