@@ -16,19 +16,18 @@
 
 package com.google.common.base;
 
-import static com.google.common.testing.SerializableTester.reserialize;
-import static com.google.common.truth.Truth.assertThat;
-
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import junit.framework.TestCase;
+
+import java.util.Collections;
+import java.util.Set;
+
+import static com.google.common.testing.SerializableTester.reserialize;
 
 /**
  * Unit test for {@link Optional}.
@@ -238,38 +237,6 @@ public final class OptionalTest extends TestCase {
 
   public void testToString_present() {
     assertEquals("Optional.of(training)", Optional.of("training").toString());
-  }
-
-  public void testPresentInstances_allPresent() {
-    List<Optional<String>> optionals =
-        ImmutableList.of(Optional.of("a"), Optional.of("b"), Optional.of("c"));
-    assertThat(Optional.presentInstances(optionals)).containsExactly("a", "b", "c").inOrder();
-  }
-
-  public void testPresentInstances_allAbsent() {
-    List<Optional<Object>> optionals = ImmutableList.of(Optional.absent(), Optional.absent());
-    assertThat(Optional.presentInstances(optionals)).isEmpty();
-  }
-
-  public void testPresentInstances_somePresent() {
-    List<Optional<String>> optionals =
-        ImmutableList.of(Optional.of("a"), Optional.<String>absent(), Optional.of("c"));
-    assertThat(Optional.presentInstances(optionals)).containsExactly("a", "c").inOrder();
-  }
-
-  public void testPresentInstances_callingIteratorTwice() {
-    List<Optional<String>> optionals =
-        ImmutableList.of(Optional.of("a"), Optional.<String>absent(), Optional.of("c"));
-    Iterable<String> onlyPresent = Optional.presentInstances(optionals);
-    assertThat(onlyPresent).containsExactly("a", "c").inOrder();
-    assertThat(onlyPresent).containsExactly("a", "c").inOrder();
-  }
-
-  public void testPresentInstances_wildcards() {
-    List<Optional<? extends Number>> optionals =
-        ImmutableList.<Optional<? extends Number>>of(Optional.<Double>absent(), Optional.of(2));
-    Iterable<Number> onlyPresent = Optional.presentInstances(optionals);
-    assertThat(onlyPresent).containsExactly(2);
   }
 
   private static Optional<Integer> getSomeOptionalInt() {

@@ -28,7 +28,6 @@ import static com.google.common.base.CharMatcher.whitespace;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.Sets;
-import com.google.common.testing.NullPointerTester;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -44,14 +43,6 @@ import junit.framework.TestCase;
  */
 @GwtCompatible(emulated = true)
 public class CharMatcherTest extends TestCase {
-
-  @GwtIncompatible // NullPointerTester
-  public void testStaticNullPointers() throws Exception {
-    NullPointerTester tester = new NullPointerTester();
-    tester.testAllPublicStaticMethods(CharMatcher.class);
-    tester.testAllPublicInstanceMethods(CharMatcher.any());
-    tester.testAllPublicInstanceMethods(CharMatcher.anyOf("abc"));
-  }
 
   private static final CharMatcher WHATEVER =
       new CharMatcher() {
@@ -151,21 +142,6 @@ public class CharMatcherTest extends TestCase {
     doTestEmpty(forPredicate(Predicates.equalTo('c')));
   }
 
-  @GwtIncompatible // NullPointerTester
-  public void testNull() throws Exception {
-    doTestNull(CharMatcher.any());
-    doTestNull(CharMatcher.none());
-    doTestNull(is('a'));
-    doTestNull(isNot('a'));
-    doTestNull(anyOf(""));
-    doTestNull(anyOf("x"));
-    doTestNull(anyOf("xy"));
-    doTestNull(anyOf("CharMatcher"));
-    doTestNull(noneOf("CharMatcher"));
-    doTestNull(inRange('n', 'q'));
-    doTestNull(forPredicate(Predicates.equalTo('c')));
-  }
-
   private void doTestEmpty(CharMatcher matcher) throws Exception {
     reallyTestEmpty(matcher);
     reallyTestEmpty(matcher.negate());
@@ -194,12 +170,6 @@ public class CharMatcherTest extends TestCase {
     assertEquals("", matcher.replaceFrom("", "ZZ"));
     assertEquals("", matcher.trimFrom(""));
     assertEquals(0, matcher.countIn(""));
-  }
-
-  @GwtIncompatible // NullPointerTester
-  private static void doTestNull(CharMatcher matcher) throws Exception {
-    NullPointerTester tester = new NullPointerTester();
-    tester.testAllPublicInstanceMethods(matcher);
   }
 
   public void testNoMatches() {
@@ -301,124 +271,6 @@ public class CharMatcherTest extends TestCase {
     assertEquals(Strings.repeat("ZZ", s.length()), matcher.replaceFrom(s, "ZZ"));
     assertEquals("", matcher.trimFrom(s));
     assertEquals(s.length(), matcher.countIn(s));
-  }
-
-  public void testGeneral() {
-    doTestGeneral(is('a'), 'a', 'b');
-    doTestGeneral(isNot('a'), 'b', 'a');
-    doTestGeneral(anyOf("x"), 'x', 'z');
-    doTestGeneral(anyOf("xy"), 'y', 'z');
-    doTestGeneral(anyOf("CharMatcher"), 'C', 'z');
-    doTestGeneral(noneOf("CharMatcher"), 'z', 'C');
-    doTestGeneral(inRange('p', 'x'), 'q', 'z');
-  }
-
-  private void doTestGeneral(CharMatcher matcher, char match, char noMatch) {
-    doTestOneCharMatch(matcher, "" + match);
-    doTestOneCharNoMatch(matcher, "" + noMatch);
-    doTestMatchThenNoMatch(matcher, "" + match + noMatch);
-    doTestNoMatchThenMatch(matcher, "" + noMatch + match);
-  }
-
-  private void doTestOneCharMatch(CharMatcher matcher, String s) {
-    reallyTestOneCharMatch(matcher, s);
-    reallyTestOneCharNoMatch(matcher.negate(), s);
-    reallyTestOneCharMatch(matcher.precomputed(), s);
-    reallyTestOneCharNoMatch(matcher.negate().precomputed(), s);
-    reallyTestOneCharNoMatch(matcher.precomputed().negate(), s);
-  }
-
-  private void doTestOneCharNoMatch(CharMatcher matcher, String s) {
-    reallyTestOneCharNoMatch(matcher, s);
-    reallyTestOneCharMatch(matcher.negate(), s);
-    reallyTestOneCharNoMatch(matcher.precomputed(), s);
-    reallyTestOneCharMatch(matcher.negate().precomputed(), s);
-    reallyTestOneCharMatch(matcher.precomputed().negate(), s);
-  }
-
-  private void doTestMatchThenNoMatch(CharMatcher matcher, String s) {
-    reallyTestMatchThenNoMatch(matcher, s);
-    reallyTestNoMatchThenMatch(matcher.negate(), s);
-    reallyTestMatchThenNoMatch(matcher.precomputed(), s);
-    reallyTestNoMatchThenMatch(matcher.negate().precomputed(), s);
-    reallyTestNoMatchThenMatch(matcher.precomputed().negate(), s);
-  }
-
-  private void doTestNoMatchThenMatch(CharMatcher matcher, String s) {
-    reallyTestNoMatchThenMatch(matcher, s);
-    reallyTestMatchThenNoMatch(matcher.negate(), s);
-    reallyTestNoMatchThenMatch(matcher.precomputed(), s);
-    reallyTestMatchThenNoMatch(matcher.negate().precomputed(), s);
-    reallyTestMatchThenNoMatch(matcher.precomputed().negate(), s);
-  }
-
-  @SuppressWarnings("deprecation") // intentionally testing apply() method
-  private void reallyTestOneCharMatch(CharMatcher matcher, String s) {
-    assertTrue(matcher.matches(s.charAt(0)));
-    assertTrue(matcher.apply(s.charAt(0)));
-    assertEquals(0, matcher.indexIn(s));
-    assertEquals(0, matcher.indexIn(s, 0));
-    assertEquals(-1, matcher.indexIn(s, 1));
-    assertEquals(0, matcher.lastIndexIn(s));
-    assertTrue(matcher.matchesAnyOf(s));
-    assertTrue(matcher.matchesAllOf(s));
-    assertFalse(matcher.matchesNoneOf(s));
-    assertEquals("", matcher.removeFrom(s));
-    assertEquals("z", matcher.replaceFrom(s, 'z'));
-    assertEquals("ZZ", matcher.replaceFrom(s, "ZZ"));
-    assertEquals("", matcher.trimFrom(s));
-    assertEquals(1, matcher.countIn(s));
-  }
-
-  @SuppressWarnings("deprecation") // intentionally testing apply() method
-  private void reallyTestOneCharNoMatch(CharMatcher matcher, String s) {
-    assertFalse(matcher.matches(s.charAt(0)));
-    assertFalse(matcher.apply(s.charAt(0)));
-    assertEquals(-1, matcher.indexIn(s));
-    assertEquals(-1, matcher.indexIn(s, 0));
-    assertEquals(-1, matcher.indexIn(s, 1));
-    assertEquals(-1, matcher.lastIndexIn(s));
-    assertFalse(matcher.matchesAnyOf(s));
-    assertFalse(matcher.matchesAllOf(s));
-    assertTrue(matcher.matchesNoneOf(s));
-
-    assertSame(s, matcher.removeFrom(s));
-    assertSame(s, matcher.replaceFrom(s, 'z'));
-    assertSame(s, matcher.replaceFrom(s, "ZZ"));
-    assertSame(s, matcher.trimFrom(s));
-    assertEquals(0, matcher.countIn(s));
-  }
-
-  private void reallyTestMatchThenNoMatch(CharMatcher matcher, String s) {
-    assertEquals(0, matcher.indexIn(s));
-    assertEquals(0, matcher.indexIn(s, 0));
-    assertEquals(-1, matcher.indexIn(s, 1));
-    assertEquals(-1, matcher.indexIn(s, 2));
-    assertEquals(0, matcher.lastIndexIn(s));
-    assertTrue(matcher.matchesAnyOf(s));
-    assertFalse(matcher.matchesAllOf(s));
-    assertFalse(matcher.matchesNoneOf(s));
-    assertEquals(s.substring(1), matcher.removeFrom(s));
-    assertEquals("z" + s.substring(1), matcher.replaceFrom(s, 'z'));
-    assertEquals("ZZ" + s.substring(1), matcher.replaceFrom(s, "ZZ"));
-    assertEquals(s.substring(1), matcher.trimFrom(s));
-    assertEquals(1, matcher.countIn(s));
-  }
-
-  private void reallyTestNoMatchThenMatch(CharMatcher matcher, String s) {
-    assertEquals(1, matcher.indexIn(s));
-    assertEquals(1, matcher.indexIn(s, 0));
-    assertEquals(1, matcher.indexIn(s, 1));
-    assertEquals(-1, matcher.indexIn(s, 2));
-    assertEquals(1, matcher.lastIndexIn(s));
-    assertTrue(matcher.matchesAnyOf(s));
-    assertFalse(matcher.matchesAllOf(s));
-    assertFalse(matcher.matchesNoneOf(s));
-    assertEquals(s.substring(0, 1), matcher.removeFrom(s));
-    assertEquals(s.substring(0, 1) + "z", matcher.replaceFrom(s, 'z'));
-    assertEquals(s.substring(0, 1) + "ZZ", matcher.replaceFrom(s, "ZZ"));
-    assertEquals(s.substring(0, 1), matcher.trimFrom(s));
-    assertEquals(1, matcher.countIn(s));
   }
 
   /**

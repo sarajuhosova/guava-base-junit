@@ -18,7 +18,6 @@ package com.google.common.base;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_PATH;
 import static com.google.common.base.StandardSystemProperty.PATH_SEPARATOR;
-import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
@@ -55,30 +54,6 @@ public class EnumsTest extends TestCase {
 
   private enum OtherEnum {}
 
-  public void testGetIfPresent() {
-    assertThat(Enums.getIfPresent(TestEnum.class, "CHEETO")).hasValue(TestEnum.CHEETO);
-    assertThat(Enums.getIfPresent(TestEnum.class, "HONDA")).hasValue(TestEnum.HONDA);
-    assertThat(Enums.getIfPresent(TestEnum.class, "POODLE")).hasValue(TestEnum.POODLE);
-
-    assertThat(Enums.getIfPresent(TestEnum.class, "CHEETO")).isPresent();
-    assertThat(Enums.getIfPresent(TestEnum.class, "HONDA")).isPresent();
-    assertThat(Enums.getIfPresent(TestEnum.class, "POODLE")).isPresent();
-
-    assertThat(Enums.getIfPresent(TestEnum.class, "CHEETO")).hasValue(TestEnum.CHEETO);
-    assertThat(Enums.getIfPresent(TestEnum.class, "HONDA")).hasValue(TestEnum.HONDA);
-    assertThat(Enums.getIfPresent(TestEnum.class, "POODLE")).hasValue(TestEnum.POODLE);
-  }
-
-  public void testGetIfPresent_caseSensitive() {
-    assertThat(Enums.getIfPresent(TestEnum.class, "cHEETO")).isAbsent();
-    assertThat(Enums.getIfPresent(TestEnum.class, "Honda")).isAbsent();
-    assertThat(Enums.getIfPresent(TestEnum.class, "poodlE")).isAbsent();
-  }
-
-  public void testGetIfPresent_whenNoMatchingConstant() {
-    assertThat(Enums.getIfPresent(TestEnum.class, "WOMBAT")).isAbsent();
-  }
-
 
   @GwtIncompatible // weak references
   public void testGetIfPresent_doesNotPreventClassUnloading() throws Exception {
@@ -103,12 +78,10 @@ public class EnumsTest extends TestCase {
     Set<Object> shadowConstants = new HashSet<>();
     for (TestEnum constant : TestEnum.values()) {
       Optional<TestEnum> result = Enums.getIfPresent(shadowTestEnum, constant.name());
-      assertThat(result).isPresent();
       shadowConstants.add(result.get());
     }
     assertEquals(ImmutableSet.<Object>copyOf(shadowTestEnum.getEnumConstants()), shadowConstants);
     Optional<TestEnum> result = Enums.getIfPresent(shadowTestEnum, "blibby");
-    assertThat(result).isAbsent();
     return new WeakReference<>(shadowLoader);
   }
 
