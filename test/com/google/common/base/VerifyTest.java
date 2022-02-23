@@ -21,7 +21,6 @@ import junit.framework.TestCase;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.base.Verify.verifyNotNull;
-import static com.google.common.truth.Truth.assertThat;
 
 /**
  * Unit test for {@link com.google.common.base.Verify}.
@@ -40,30 +39,8 @@ public class VerifyTest extends TestCase {
         }
     }
 
-    public void testVerify_simpleMessage_success() {
-        verify(true, "message");
-    }
-
-    public void testVerify_simpleMessage_failure() {
-        try {
-            verify(false, "message");
-            fail();
-        } catch (VerifyException expected) {
-            assertThat(expected).hasMessageThat().isEqualTo("message");
-        }
-    }
-
     public void testVerify_complexMessage_success() {
         verify(true, "%s", IGNORE_ME);
-    }
-
-    public void testVerify_complexMessage_failure() {
-        try {
-            verify(false, FORMAT, 5);
-            fail();
-        } catch (VerifyException expected) {
-            checkMessage(expected);
-        }
     }
 
     private static final String NON_NULL_STRING = "foo";
@@ -86,15 +63,6 @@ public class VerifyTest extends TestCase {
         assertSame(NON_NULL_STRING, result);
     }
 
-    public void testVerifyNotNull_simpleMessage_failure() {
-        try {
-            verifyNotNull(null, FORMAT, 5);
-            fail();
-        } catch (VerifyException expected) {
-            checkMessage(expected);
-        }
-    }
-
     @GwtIncompatible // NullPointerTester
     public void testNullPointers() {
         // Don't bother testing: Verify is like Preconditions. See the discussion on that class.
@@ -109,8 +77,4 @@ public class VerifyTest extends TestCase {
             };
 
     private static final String FORMAT = "I ate %s pies.";
-
-    private static void checkMessage(Exception e) {
-        assertThat(e).hasMessageThat().isEqualTo("I ate 5 pies.");
-    }
 }

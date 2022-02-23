@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-import static com.google.common.truth.Truth.assertThat;
 import static java.lang.Character.*;
 
 /**
@@ -101,25 +100,6 @@ public class Utf8Test extends TestCase {
                     assertEquals(repro.toString(), utf8Length, Utf8.encodedLength(sb));
                 }
             }
-        }
-    }
-
-    public void testEncodedLength_invalidStrings() {
-        testEncodedLengthFails(newString(MIN_HIGH_SURROGATE), 0);
-        testEncodedLengthFails("foobar" + newString(MIN_HIGH_SURROGATE), 6);
-        testEncodedLengthFails(newString(MIN_LOW_SURROGATE), 0);
-        testEncodedLengthFails("foobar" + newString(MIN_LOW_SURROGATE), 6);
-        testEncodedLengthFails(newString(MIN_HIGH_SURROGATE, MIN_HIGH_SURROGATE), 0);
-    }
-
-    private static void testEncodedLengthFails(String invalidString, int invalidCodePointIndex) {
-        try {
-            Utf8.encodedLength(invalidString);
-            fail();
-        } catch (IllegalArgumentException expected) {
-            assertThat(expected)
-                    .hasMessageThat()
-                    .isEqualTo("Unpaired surrogate at index " + invalidCodePointIndex);
         }
     }
 

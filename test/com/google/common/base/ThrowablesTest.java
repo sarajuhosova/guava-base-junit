@@ -20,16 +20,13 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
-import com.google.common.testing.NullPointerTester;
 import junit.framework.TestCase;
 
 import java.util.List;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.base.Throwables.*;
-import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
-import static java.util.regex.Pattern.quote;
 
 /**
  * Unit test for {@link Throwables}.
@@ -393,29 +390,6 @@ public class ThrowablesTest extends TestCase {
         }
     }
 
-    @GwtIncompatible // propagate
-    public void testPropagate_NoneDeclared_CheckedThrown() {
-        Sample sample =
-                new Sample() {
-                    @Override
-                    public void noneDeclared() {
-                        try {
-                            methodThatThrowsChecked();
-                        } catch (Throwable t) {
-                            throw Throwables.propagate(t);
-                        }
-                    }
-                };
-
-        // Expect the undeclared exception to have been chained inside another
-        try {
-            sample.noneDeclared();
-            fail();
-        } catch (RuntimeException expected) {
-            assertThat(expected).hasCauseThat().isInstanceOf(SomeCheckedException.class);
-        }
-    }
-
     @GwtIncompatible // throwIfInstanceOf
     public void testThrowIfInstanceOf_Unchecked() throws SomeCheckedException {
         throwIfInstanceOf(new SomeUncheckedException(), SomeCheckedException.class);
@@ -511,30 +485,6 @@ public class ThrowablesTest extends TestCase {
     }
 
     @GwtIncompatible // throwIfInstanceOf
-    public void testPropagateIfInstanceOf_UndeclaredThrown() throws SomeCheckedException {
-        Sample sample =
-                new Sample() {
-                    @Override
-                    public void oneDeclared() throws SomeCheckedException {
-                        try {
-                            methodThatThrowsOtherChecked();
-                        } catch (Throwable t) {
-                            Throwables.propagateIfInstanceOf(t, SomeCheckedException.class);
-                            throw Throwables.propagate(t);
-                        }
-                    }
-                };
-
-        // Expect undeclared exception wrapped by RuntimeException to be thrown
-        try {
-            sample.oneDeclared();
-            fail();
-        } catch (RuntimeException expected) {
-            assertThat(expected).hasCauseThat().isInstanceOf(SomeOtherCheckedException.class);
-        }
-    }
-
-    @GwtIncompatible // throwIfInstanceOf
     public void testThrowIfInstanceOf_null() throws SomeCheckedException {
         try {
             throwIfInstanceOf(null, SomeCheckedException.class);
@@ -563,18 +513,6 @@ public class ThrowablesTest extends TestCase {
         SomeCheckedException cause = new SomeCheckedException();
         SomeChainingException exception = new SomeChainingException(new SomeChainingException(cause));
         assertSame(cause, Throwables.getRootCause(exception));
-    }
-
-    public void testGetRootCause_Loop() {
-        Exception cause = new Exception();
-        Exception exception = new Exception(cause);
-        cause.initCause(exception);
-        try {
-            Throwables.getRootCause(cause);
-            fail("Should have throw IAE");
-        } catch (IllegalArgumentException expected) {
-            assertThat(expected).hasCauseThat().isSameInstanceAs(cause);
-        }
     }
 
     private static class SomeError extends Error {
@@ -632,23 +570,6 @@ public class ThrowablesTest extends TestCase {
         throw new SomeUndeclaredCheckedException();
     }
 
-    @GwtIncompatible // getStackTraceAsString(Throwable)
-    public void testGetStackTraceAsString() {
-        class StackTraceException extends Exception {
-            StackTraceException(String message) {
-                super(message);
-            }
-        }
-
-        StackTraceException e = new StackTraceException("my message");
-
-        String firstLine = quote(e.getClass().getName() + ": " + e.getMessage());
-        String secondLine = "\\s*at " + ThrowablesTest.class.getName() + "\\..*";
-        String moreLines = "(?:.*\n?)*";
-        String expected = firstLine + "\n" + secondLine + "\n" + moreLines;
-        assertThat(getStackTraceAsString(e)).matches(expected);
-    }
-
     public void testGetCausalChain() {
         SomeUncheckedException sue = new SomeUncheckedException();
         IllegalArgumentException iae = new IllegalArgumentException(sue);
@@ -674,35 +595,6 @@ public class ThrowablesTest extends TestCase {
         }
     }
 
-    public void testGetCasualChainLoop() {
-        Exception cause = new Exception();
-        Exception exception = new Exception(cause);
-        cause.initCause(exception);
-        try {
-            Throwables.getCausalChain(cause);
-            fail("Should have throw IAE");
-        } catch (IllegalArgumentException expected) {
-            assertThat(expected).hasCauseThat().isSameInstanceAs(cause);
-        }
-    }
-
-    @GwtIncompatible // Throwables.getCauseAs(Throwable, Class)
-    public void testGetCauseAs() {
-        SomeCheckedException cause = new SomeCheckedException();
-        SomeChainingException thrown = new SomeChainingException(cause);
-
-        assertThat(thrown).hasCauseThat().isSameInstanceAs(cause);
-        assertThat(Throwables.getCauseAs(thrown, SomeCheckedException.class)).isSameInstanceAs(cause);
-        assertThat(Throwables.getCauseAs(thrown, Exception.class)).isSameInstanceAs(cause);
-
-        try {
-            Throwables.getCauseAs(thrown, IllegalStateException.class);
-            fail("Should have thrown CCE");
-        } catch (ClassCastException expected) {
-            assertThat(expected).hasCauseThat().isSameInstanceAs(thrown);
-        }
-    }
-
     @AndroidIncompatible // No getJavaLangAccess in Android (at least not in the version we use).
     @GwtIncompatible // lazyStackTraceIsLazy()
     public void testLazyStackTraceWorksInProd() {
@@ -713,51 +605,5 @@ public class ThrowablesTest extends TestCase {
         }
         // Obviously this isn't guaranteed in every environment, but it works well enough for now:
         assertTrue(lazyStackTraceIsLazy());
-    }
-
-    @GwtIncompatible // lazyStackTrace(Throwable)
-    public void testLazyStackTrace() {
-        Exception e = new Exception();
-        StackTraceElement[] originalStackTrace = e.getStackTrace();
-
-        assertThat(lazyStackTrace(e)).containsExactly((Object[]) originalStackTrace).inOrder();
-
-        try {
-            lazyStackTrace(e).set(0, null);
-            fail();
-        } catch (UnsupportedOperationException expected) {
-        }
-
-        // Now we test a property that holds only for the lazy implementation.
-
-        if (!lazyStackTraceIsLazy()) {
-            return;
-        }
-
-        e.setStackTrace(new StackTraceElement[0]);
-        assertThat(lazyStackTrace(e)).containsExactly((Object[]) originalStackTrace).inOrder();
-    }
-
-    @GwtIncompatible // lazyStackTrace
-    private void doTestLazyStackTraceFallback() {
-        assertFalse(lazyStackTraceIsLazy());
-
-        Exception e = new Exception();
-
-        assertThat(lazyStackTrace(e)).containsExactly((Object[]) e.getStackTrace()).inOrder();
-
-        try {
-            lazyStackTrace(e).set(0, null);
-            fail();
-        } catch (UnsupportedOperationException expected) {
-        }
-
-        e.setStackTrace(new StackTraceElement[0]);
-        assertThat(lazyStackTrace(e)).isEmpty();
-    }
-
-    @GwtIncompatible // NullPointerTester
-    public void testNullPointers() {
-        new NullPointerTester().testAllPublicStaticMethods(Throwables.class);
     }
 }

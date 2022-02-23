@@ -17,8 +17,6 @@
 package com.google.common.base;
 
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.annotations.GwtIncompatible;
-import com.google.common.testing.NullPointerTester;
 import junit.framework.TestCase;
 
 /**
@@ -56,11 +54,5 @@ public class ObjectsTest extends TestCase {
         assertTrue(Objects.hashCode(1, null, 2) != Objects.hashCode(1, 2));
         assertTrue(Objects.hashCode(1, 2, 3) != Objects.hashCode(3, 2, 1));
         assertTrue(Objects.hashCode(1, 2, 3) != Objects.hashCode(2, 3, 1));
-    }
-
-    @GwtIncompatible // NullPointerTester
-    public void testNullPointers() {
-        NullPointerTester tester = new NullPointerTester();
-        tester.testAllPublicStaticMethods(Objects.class);
     }
 }

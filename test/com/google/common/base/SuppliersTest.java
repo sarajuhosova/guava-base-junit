@@ -19,8 +19,6 @@ package com.google.common.base;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.Lists;
-import com.google.common.testing.ClassSanityTester;
-import com.google.common.testing.EqualsTester;
 import junit.framework.TestCase;
 
 import java.io.Serializable;
@@ -30,9 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.google.common.testing.SerializableTester.reserialize;
-import static com.google.common.truth.Truth.assertThat;
 
 /**
  * Tests com.google.common.base.Suppliers.
@@ -127,45 +122,6 @@ public class SuppliersTest extends TestCase {
         }
     }
 
-    @GwtIncompatible // SerializableTester
-    public void testMemoizeNonSerializable() throws Exception {
-        CountingSupplier countingSupplier = new CountingSupplier();
-        Supplier<Integer> memoizedSupplier = Suppliers.memoize(countingSupplier);
-        assertThat(memoizedSupplier.toString()).isEqualTo("Suppliers.memoize(CountingSupplier)");
-        checkMemoize(countingSupplier, memoizedSupplier);
-        // Calls to the original memoized supplier shouldn't affect its copy.
-        memoizedSupplier.get();
-        assertThat(memoizedSupplier.toString())
-                .isEqualTo("Suppliers.memoize(<supplier that returned 10>)");
-
-        // Should get an exception when we try to serialize.
-        try {
-            reserialize(memoizedSupplier);
-            fail();
-        } catch (RuntimeException ex) {
-            assertThat(ex).hasCauseThat().isInstanceOf(java.io.NotSerializableException.class);
-        }
-    }
-
-    @GwtIncompatible // SerializableTester
-    public void testMemoizeSerializable() throws Exception {
-        SerializableCountingSupplier countingSupplier = new SerializableCountingSupplier();
-        Supplier<Integer> memoizedSupplier = Suppliers.memoize(countingSupplier);
-        assertThat(memoizedSupplier.toString()).isEqualTo("Suppliers.memoize(CountingSupplier)");
-        checkMemoize(countingSupplier, memoizedSupplier);
-        // Calls to the original memoized supplier shouldn't affect its copy.
-        memoizedSupplier.get();
-        assertThat(memoizedSupplier.toString())
-                .isEqualTo("Suppliers.memoize(<supplier that returned 10>)");
-
-        Supplier<Integer> copy = reserialize(memoizedSupplier);
-        memoizedSupplier.get();
-
-        CountingSupplier countingCopy =
-                (CountingSupplier) ((Suppliers.MemoizingSupplier<Integer>) copy).delegate;
-        checkMemoize(countingCopy, copy);
-    }
-
     public void testCompose() {
         Supplier<Integer> fiveSupplier =
                 new Supplier<Integer>() {
@@ -222,23 +178,6 @@ public class SuppliersTest extends TestCase {
                 Suppliers.memoizeWithExpiration(countingSupplier, 75, TimeUnit.MILLISECONDS);
 
         checkExpiration(countingSupplier, memoizedSupplier);
-    }
-
-    @GwtIncompatible // Thread.sleep, SerializationTester
-    public void testMemoizeWithExpirationSerialized() throws InterruptedException {
-        SerializableCountingSupplier countingSupplier = new SerializableCountingSupplier();
-
-        Supplier<Integer> memoizedSupplier =
-                Suppliers.memoizeWithExpiration(countingSupplier, 75, TimeUnit.MILLISECONDS);
-        // Calls to the original memoized supplier shouldn't affect its copy.
-        memoizedSupplier.get();
-
-        Supplier<Integer> copy = reserialize(memoizedSupplier);
-        memoizedSupplier.get();
-
-        CountingSupplier countingCopy =
-                (CountingSupplier) ((Suppliers.ExpiringMemoizingSupplier<Integer>) copy).delegate;
-        checkExpiration(countingCopy, copy);
     }
 
     @GwtIncompatible // Thread.sleep
@@ -426,49 +365,5 @@ public class SuppliersTest extends TestCase {
         Function<Supplier<Integer>, Integer> supplierFunction = Suppliers.supplierFunction();
 
         assertEquals(14, (int) supplierFunction.apply(supplier));
-    }
-
-    @GwtIncompatible // SerializationTester
-    public void testSerialization() {
-        assertEquals(Integer.valueOf(5), reserialize(Suppliers.ofInstance(5)).get());
-        assertEquals(
-                Integer.valueOf(5),
-                reserialize(Suppliers.compose(Functions.identity(), Suppliers.ofInstance(5))).get());
-        assertEquals(Integer.valueOf(5), reserialize(Suppliers.memoize(Suppliers.ofInstance(5))).get());
-        assertEquals(
-                Integer.valueOf(5),
-                reserialize(Suppliers.memoizeWithExpiration(Suppliers.ofInstance(5), 30, TimeUnit.SECONDS))
-                        .get());
-        assertEquals(
-                Integer.valueOf(5),
-                reserialize(Suppliers.synchronizedSupplier(Suppliers.ofInstance(5))).get());
-    }
-
-    @GwtIncompatible // reflection
-    public void testSuppliersNullChecks() throws Exception {
-        new ClassSanityTester().forAllPublicStaticMethods(Suppliers.class).testNulls();
-    }
-
-    @GwtIncompatible // reflection
-    @AndroidIncompatible // TODO(cpovirk): ClassNotFoundException: com.google.common.base.Function
-    public void testSuppliersSerializable() throws Exception {
-        new ClassSanityTester().forAllPublicStaticMethods(Suppliers.class).testSerializable();
-    }
-
-    public void testOfInstance_equals() {
-        new EqualsTester()
-                .addEqualityGroup(Suppliers.ofInstance("foo"), Suppliers.ofInstance("foo"))
-                .addEqualityGroup(Suppliers.ofInstance("bar"))
-                .testEquals();
-    }
-
-    public void testCompose_equals() {
-        new EqualsTester()
-                .addEqualityGroup(
-                        Suppliers.compose(Functions.constant(1), Suppliers.ofInstance("foo")),
-                        Suppliers.compose(Functions.constant(1), Suppliers.ofInstance("foo")))
-                .addEqualityGroup(Suppliers.compose(Functions.constant(2), Suppliers.ofInstance("foo")))
-                .addEqualityGroup(Suppliers.compose(Functions.constant(1), Suppliers.ofInstance("bar")))
-                .testEquals();
     }
 }
